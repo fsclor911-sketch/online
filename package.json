@@ -1,0 +1,12 @@
+{
+  "name": "roblox-player-counter",
+  "version": "1.0.0",
+  "description": "External server for Roblox player count",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
