@@ -2,33 +2,33 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
-// تخزين معرفات اللاعبين النشطين
-let activePlayers = new Set();
+// تخزين بيانات اللاعبين: { playerId: lastHeartbeat }
+let players = new Map();
 
-// نقطة نهاية واحدة للدخول والخروج
-app.post('/update', (req, res) => {
-    const { playerId, action } = req.body;
-    if (!playerId || !action) {
-        return res.status(400).json({ error: 'Missing data' });
+// نقطة نهاية للتسجيل وإرسال نبضات الحياة
+app.post('/heartbeat', (req, res) => {
+    const { playerId } = req.body;
+    if (!playerId) return res.status(400).json({ error: 'Missing playerId' });
+
+    const now = Date.now();
+    players.set(playerId, now);
+
+    // تنظيف اللاعبين الذين لم يرسلوا نبضات خلال آخر 20 ثانية
+    for (let [id, time] of players.entries()) {
+        if (now - time > 20000) { // 20 ثانية
+            players.delete(id);
+            console.log(`🗑️ Player ${id} removed (timeout)`);
+        }
     }
 
-    if (action === 'join') {
-        activePlayers.add(playerId);
-    } else if (action === 'leave') {
-        activePlayers.delete(playerId);
-    } else {
-        return res.status(400).json({ error: 'Invalid action' });
-    }
-
-    const count = activePlayers.size;
-    console.log(`👤 Player ${playerId} ${action} → Online: ${count}`);
-    res.json({ count });
+    console.log(`❤️ Heartbeat from ${playerId}, current online: ${players.size}`);
+    res.json({ count: players.size });
 });
 
-// نقطة نهاية لجلب العدد الحالي (للعرض)
+// نقطة نهاية لجلب العدد الحالي
 app.get('/count', (req, res) => {
-    res.json({ count: activePlayers.size });
+    res.json({ count: players.size });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
