@@ -1,7 +1,6 @@
 {
   "name": "roblox-online-counter",
   "version": "1.0.0",
-  "description": "External server for Roblox player counter",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
