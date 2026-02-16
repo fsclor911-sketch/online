@@ -1,53 +1,52 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-app.use(cors()); // يسمح بطلبات من أي مصدر (Roblox)
+app.use(cors()); // مهم جداً لـ Roblox
 app.use(express.json());
 
-// تخزين اللاعبين النشطين: username -> { lastPing }
-const players = new Map();
+const players = new Map(); // username -> lastPing
 
-// تنظيف اللاعبين غير النشطين (آخر ping أقدم من 25 ثانية)
+// تنظيف غير النشطين (أقدم من 25 ثانية)
 function cleanInactive() {
     const now = Date.now();
-    for (const [name, data] of players.entries()) {
-        if (now - data.lastPing > 25000) { // 25 ثانية (أقل من 30 ثانية احتياطاً)
+    for (const [name, time] of players.entries()) {
+        if (now - time > 25000) {
             players.delete(name);
-            console.log(`🗑️ Removed ${name} (timeout)`);
+            console.log(`Removed ${name} (timeout)`);
         }
     }
 }
-setInterval(cleanInactive, 10000); // كل 10 ثواني
+setInterval(cleanInactive, 10000);
 
-// نقطة نهاية ping (يسجل اللاعب النشط)
+// نقطة نهاية Ping (POST)
 app.post('/ping', (req, res) => {
     const { username } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Missing username' });
     }
-    players.set(username, { lastPing: Date.now() });
-    console.log(`❤️ Ping from ${username} – online: ${players.size}`);
+    players.set(username, Date.now());
+    console.log(`Ping from ${username} – online: ${players.size}`);
     res.json({ status: 'ok', online: players.size });
 });
 
-// نقطة نهاية لجلب العدد الحالي
+// نقطة نهاية Count (GET)
 app.get('/count', (req, res) => {
-    cleanInactive(); // تنظيف قبل الإرسال
+    cleanInactive();
     res.json({ count: players.size });
 });
 
-// نقطة نهاية لجلب قائمة الأسماء (اختياري)
+// نقطة نهاية Players (GET) اختيارية
 app.get('/players', (req, res) => {
     cleanInactive();
     res.json(Array.from(players.keys()));
 });
 
-// الصفحة الرئيسية (للتأكد من أن الخادم شغال)
+// نقطة نهاية رئيسية للتأكد من عمل الخادم
 app.get('/', (req, res) => {
     res.send('✅ Roblox Online Counter Server is running');
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server started on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
